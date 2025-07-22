@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Login - PrivyPilot{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center align-items-center min-vh-100">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-5">
+                    <!-- Logo and Title -->
+                    <div class="text-center mb-4">
+                        <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="PrivyPilot" width="64" height="64" class="mb-3">
+                        <h2 class="fw-bold text-primary">Welcome Back</h2>
+                        <p class="text-muted">Sign in to your PrivyPilot account</p>
+                    </div>
+                    
+                    <!-- Login Form -->
+                    <form method="POST" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-envelope"></i>
+                                </span>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                                <div class="invalid-feedback">
+                                    Please provide a valid email address.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-lock"></i>
+                                </span>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password')">
+                                    <i class="bi bi-eye" id="password-toggle"></i>
+                                </button>
+                                <div class="invalid-feedback">
+                                    Please enter your password.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me">
+                            <label class="form-check-label" for="remember_me">
+                                Remember me
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100 btn-lg mb-3">
+                            <i class="bi bi-box-arrow-in-right"></i> Sign In
+                        </button>
+                        
+                        <div class="text-center">
+                            <p class="text-muted mb-2">Don't have an account?</p>
+                            <a href="{{ url_for('register') }}" class="btn btn-outline-primary">
+                                <i class="bi bi-person-plus"></i> Create Account
+                            </a>
+                        </div>
+                    </form>
+                    
+                    <!-- Demo Login -->
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6 class="text-center mb-2">
+                            <i class="bi bi-info-circle"></i> Quick Demo Access
+                        </h6>
+                        <div class="small text-muted text-center">
+                            <strong>Email:</strong> admin@privypilot.com<br>
+                            <strong>Password:</strong> admin123
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feature Highlights -->
+            <div class="row g-3 mt-4">
+                <div class="col-4 text-center">
+                    <div class="p-3">
+                        <i class="bi bi-shield-check text-success fs-3"></i>
+                        <div class="small text-muted mt-2">Secure Login</div>
+                    </div>
+                </div>
+                <div class="col-4 text-center">
+                    <div class="p-3">
+                        <i class="bi bi-lightning-charge text-warning fs-3"></i>
+                        <div class="small text-muted mt-2">Instant Access</div>
+                    </div>
+                </div>
+                <div class="col-4 text-center">
+                    <div class="p-3">
+                        <i class="bi bi-phone text-info fs-3"></i>
+                        <div class="small text-muted mt-2">Mobile Ready</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Form validation
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+
+// Toggle password visibility
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const toggle = document.getElementById(fieldId + '-toggle');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        toggle.className = 'bi bi-eye-slash';
+    } else {
+        field.type = 'password';
+        toggle.className = 'bi bi-eye';
+    }
+}
+</script>
+{% endblock %}

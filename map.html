@@ -1,0 +1,436 @@
+{% extends "base.html" %}
+
+{% block title %}Map - PrivyPilot{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Map Controls Header -->
+    <div class="bg-primary text-white p-3">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h4 class="mb-0">
+                        <i class="bi bi-map"></i> Interactive Map
+                    </h4>
+                    <small>Find washrooms and track emergency services</small>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-light btn-sm" onclick="getCurrentLocation()">
+                        <i class="bi bi-crosshair"></i> My Location
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Map Container -->
+    <div id="map" style="height: 70vh; width: 100%;"></div>
+    
+    <!-- Map Legend and Controls -->
+    <div class="bg-light p-3">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="mb-2">
+                        <i class="bi bi-info-circle"></i> Map Legend
+                    </h6>
+                    <div class="d-flex flex-wrap gap-3">
+                        <div class="d-flex align-items-center">
+                            <div class="legend-marker bg-primary me-2"></div>
+                            <small>Washrooms</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="legend-marker bg-success me-2"></div>
+                            <small>Your Location</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="legend-marker bg-warning me-2"></div>
+                            <small>Emergency Van</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="legend-marker bg-danger me-2"></div>
+                            <small>Emergency Request</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex gap-2 justify-content-md-end">
+                        <button class="btn btn-outline-primary btn-sm" onclick="showAllWashrooms()">
+                            <i class="bi bi-geo-alt"></i> Show All
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" onclick="showNearby()">
+                            <i class="bi bi-geo-alt-fill"></i> Nearby Only
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm" onclick="toggleVanTracking()">
+                            <i class="bi bi-truck"></i> Toggle Vans
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Action Panel (Floating) -->
+<div class="position-fixed bottom-0 end-0 m-3" style="z-index: 1000;">
+    <div class="card shadow-lg border-0" style="min-width: 280px;">
+        <div class="card-header bg-primary text-white">
+            <h6 class="mb-0">
+                <i class="bi bi-lightning"></i> Quick Actions
+            </h6>
+        </div>
+        <div class="card-body p-3">
+            <div class="d-grid gap-2">
+                <button class="btn btn-danger btn-sm" onclick="requestEmergencyHelp()">
+                    <i class="bi bi-exclamation-triangle"></i> Emergency Help
+                </button>
+                <button class="btn btn-info btn-sm" onclick="findNearestWashroom()">
+                    <i class="bi bi-geo-alt"></i> Nearest Washroom
+                </button>
+                <button class="btn btn-success btn-sm" onclick="callEmergencyVan()">
+                    <i class="bi bi-truck"></i> Call Emergency Van
+                </button>
+            </div>
+            
+            <!-- Location Info -->
+            <div class="mt-3 p-2 bg-light rounded">
+                <div class="small text-muted">Current Location</div>
+                <div id="current-coords" class="fw-bold small">Detecting...</div>
+                <div id="location-accuracy" class="small text-muted"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Washroom Details Modal -->
+<div class="modal fade" id="washroomModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-geo-alt"></i> Washroom Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="washroom-details">
+                    <!-- Details will be loaded dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="#" id="review-link" class="btn btn-primary">
+                    <i class="bi bi-star"></i> View Reviews
+                </a>
+                <button type="button" class="btn btn-success" onclick="getDirections()">
+                    <i class="bi bi-navigation"></i> Get Directions
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<script>
+let map;
+let userLocation = null;
+let washroomMarkers = [];
+let vanMarkers = [];
+let emergencyMarkers = [];
+
+// Initialize map when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeMap();
+    getCurrentLocation();
+});
+
+function initializeMap() {
+    // Initialize Leaflet map
+    map = L.map('map').setView([28.6139, 77.2090], 13);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Load washrooms
+    loadWashrooms();
+    
+    // Start tracking vans if there are emergency requests
+    startVanTracking();
+}
+
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                userLocation = [position.coords.latitude, position.coords.longitude];
+                
+                // Update location display
+                document.getElementById('current-coords').textContent = 
+                    `${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`;
+                document.getElementById('location-accuracy').textContent = 
+                    `Accuracy: ±${Math.round(position.coords.accuracy)}m`;
+                
+                // Add user location marker
+                if (window.userMarker) {
+                    map.removeLayer(window.userMarker);
+                }
+                
+                window.userMarker = L.marker(userLocation, {
+                    icon: L.divIcon({
+                        className: 'user-location-marker',
+                        html: '<i class="bi bi-geo-alt-fill text-success fs-4"></i>',
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    })
+                }).addTo(map).bindPopup('You are here');
+                
+                // Center map on user location
+                map.setView(userLocation, 14);
+                
+                // Store in session storage
+                sessionStorage.setItem('userLat', position.coords.latitude);
+                sessionStorage.setItem('userLng', position.coords.longitude);
+            },
+            function(error) {
+                console.error('Geolocation error:', error);
+                document.getElementById('current-coords').textContent = 'Location unavailable';
+                document.getElementById('location-accuracy').textContent = 'Please enable location services';
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000
+            }
+        );
+    }
+}
+
+function loadWashrooms() {
+    // Sample washroom data (in real app, this would come from API)
+    const washrooms = [
+        {
+            id: 1,
+            name: 'Central Mall Restroom',
+            lat: 28.6139,
+            lng: 77.2090,
+            type: 'mall',
+            rating: 4.2,
+            cleanliness: 4.2,
+            distance: null
+        },
+        {
+            id: 2,
+            name: 'Coffee Shop Washroom',
+            lat: 28.6129,
+            lng: 77.2295,
+            type: 'cafe',
+            rating: 3.8,
+            cleanliness: 3.8,
+            distance: null
+        },
+        {
+            id: 3,
+            name: 'Petrol Pump Facility',
+            lat: 28.6200,
+            lng: 77.2100,
+            type: 'petrol_pump',
+            rating: 3.5,
+            cleanliness: 3.5,
+            distance: null
+        }
+    ];
+    
+    washrooms.forEach(washroom => {
+        const icon = getWashroomIcon(washroom.type);
+        
+        const marker = L.marker([washroom.lat, washroom.lng], {
+            icon: L.divIcon({
+                className: 'washroom-marker',
+                html: `<i class="bi bi-${icon} text-primary fs-4"></i>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            })
+        }).addTo(map);
+        
+        marker.on('click', () => showWashroomDetails(washroom));
+        washroomMarkers.push(marker);
+    });
+}
+
+function getWashroomIcon(type) {
+    const icons = {
+        mall: 'building',
+        cafe: 'cup-hot',
+        petrol_pump: 'fuel-pump',
+        restaurant: 'shop',
+        govt: 'bank'
+    };
+    return icons[type] || 'geo-alt';
+}
+
+function showWashroomDetails(washroom) {
+    const details = `
+        <div class="text-center mb-3">
+            <h5 class="fw-bold">${washroom.name}</h5>
+            <div class="badge bg-${getTypeColor(washroom.type)} mb-2">${washroom.type.replace('_', ' ').toUpperCase()}</div>
+        </div>
+        
+        <div class="row mb-3">
+            <div class="col-6 text-center">
+                <div class="fw-bold text-warning">${washroom.rating}/5</div>
+                <small class="text-muted">Rating</small>
+            </div>
+            <div class="col-6 text-center">
+                <div class="fw-bold text-info">${washroom.cleanliness}/5</div>
+                <small class="text-muted">Cleanliness</small>
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <h6 class="fw-bold mb-2">Available Amenities:</h6>
+            <div class="d-flex flex-wrap gap-1">
+                <span class="badge bg-light text-dark">Western Seat</span>
+                <span class="badge bg-light text-dark">Toilet Paper</span>
+                <span class="badge bg-light text-dark">Charging Point</span>
+            </div>
+        </div>
+        
+        ${userLocation ? `<div class="alert alert-info">
+            <i class="bi bi-geo-alt"></i> Distance: ${calculateDistance(userLocation[0], userLocation[1], washroom.lat, washroom.lng).toFixed(2)} km
+        </div>` : ''}
+    `;
+    
+    document.getElementById('washroom-details').innerHTML = details;
+    document.getElementById('review-link').href = `/reviews/${washroom.id}`;
+    
+    new bootstrap.Modal(document.getElementById('washroomModal')).show();
+}
+
+function getTypeColor(type) {
+    const colors = {
+        mall: 'primary',
+        cafe: 'success',
+        petrol_pump: 'warning',
+        restaurant: 'info',
+        govt: 'secondary'
+    };
+    return colors[type] || 'primary';
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+function showAllWashrooms() {
+    washroomMarkers.forEach(marker => {
+        if (!map.hasLayer(marker)) {
+            map.addLayer(marker);
+        }
+    });
+}
+
+function showNearby() {
+    if (!userLocation) {
+        alert('Location not available. Please enable GPS.');
+        return;
+    }
+    
+    const maxDistance = 2; // km
+    washroomMarkers.forEach(marker => {
+        const markerPos = marker.getLatLng();
+        const distance = calculateDistance(userLocation[0], userLocation[1], markerPos.lat, markerPos.lng);
+        
+        if (distance <= maxDistance) {
+            if (!map.hasLayer(marker)) {
+                map.addLayer(marker);
+            }
+        } else {
+            if (map.hasLayer(marker)) {
+                map.removeLayer(marker);
+            }
+        }
+    });
+}
+
+function toggleVanTracking() {
+    vanMarkers.forEach(marker => {
+        if (map.hasLayer(marker)) {
+            map.removeLayer(marker);
+        } else {
+            map.addLayer(marker);
+        }
+    });
+}
+
+function requestEmergencyHelp() {
+    window.location.href = '/emergency';
+}
+
+function findNearestWashroom() {
+    if (!userLocation) {
+        alert('Location not available. Please enable GPS.');
+        return;
+    }
+    
+    // Find nearest washroom logic here
+    window.location.href = `/washrooms?lat=${userLocation[0]}&lng=${userLocation[1]}`;
+}
+
+function callEmergencyVan() {
+    if (!userLocation) {
+        alert('Location not available. Please enable GPS.');
+        return;
+    }
+    
+    // Create emergency request and redirect to tracking
+    window.location.href = '/emergency';
+}
+
+function getDirections() {
+    // Open in Google Maps or similar
+    alert('Opening directions in your default map application...');
+}
+
+function startVanTracking() {
+    // Simulate van tracking for demo
+    const sampleVan = {
+        lat: 28.6100,
+        lng: 77.2050,
+        id: 'van-1',
+        eta: 8
+    };
+    
+    const vanMarker = L.marker([sampleVan.lat, sampleVan.lng], {
+        icon: L.divIcon({
+            className: 'van-marker',
+            html: '<i class="bi bi-truck text-warning fs-4"></i>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+        })
+    }).addTo(map).bindPopup(`Emergency Van - ETA: ${sampleVan.eta} mins`);
+    
+    vanMarkers.push(vanMarker);
+    
+    // Animate van movement
+    setInterval(() => {
+        if (userLocation) {
+            const currentPos = vanMarker.getLatLng();
+            const newLat = currentPos.lat + (userLocation[0] - currentPos.lat) * 0.1;
+            const newLng = currentPos.lng + (userLocation[1] - currentPos.lng) * 0.1;
+            vanMarker.setLatLng([newLat, newLng]);
+        }
+    }, 2000);
+}
+</script>
+{% endblock %}

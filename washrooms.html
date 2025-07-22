@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block title %}Find Washrooms - PrivyPilot{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header and Filters -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="bi bi-geo-alt"></i> Find Washrooms
+                        </h4>
+                        <button class="btn btn-light btn-sm" onclick="getCurrentLocation()">
+                            <i class="bi bi-crosshair"></i> Use My Location
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Search and Filter Form -->
+                    <form method="GET" id="filter-form" class="row g-3">
+                        <input type="hidden" id="lat" name="lat" value="{{ user_lat or '' }}">
+                        <input type="hidden" id="lng" name="lng" value="{{ user_lng or '' }}">
+                        
+                        <!-- Seat Type Filter -->
+                        <div class="col-md-3 col-sm-6">
+                            <label class="form-label">
+                                <i class="bi bi-person-wheelchair"></i> Seat Type
+                            </label>
+                            <select class="form-select" name="seat_type">
+                                <option value="">Any Seat</option>
+                                <option value="indian" {{ 'selected' if request.args.get('seat_type') == 'indian' }}>🚻 Indian</option>
+                                <option value="western" {{ 'selected' if request.args.get('seat_type') == 'western' }}>🚽 Western</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Payment Filter -->
+                        <div class="col-md-3 col-sm-6">
+                            <label class="form-label">
+                                <i class="bi bi-currency-rupee"></i> Payment
+                            </label>
+                            <select class="form-select" name="paid">
+                                <option value="">Any</option>
+                                <option value="free" {{ 'selected' if request.args.get('paid') == 'free' }}>🆓 Free</option>
+                                <option value="paid" {{ 'selected' if request.args.get('paid') == 'paid' }}>💰 Paid</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Cleanliness Filter -->
+                        <div class="col-md-3 col-sm-6">
+                            <label class="form-label">
+                                <i class="bi bi-star"></i> Min. Cleanliness
+                            </label>
+                            <select class="form-select" name="min_cleanliness">
+                                <option value="">Any Rating</option>
+                                <option value="3" {{ 'selected' if request.args.get('min_cleanliness') == '3' }}>⭐⭐⭐ 3+</option>
+                                <option value="4" {{ 'selected' if request.args.get('min_cleanliness') == '4' }}>⭐⭐⭐⭐ 4+</option>
+                                <option value="4.5" {{ 'selected' if request.args.get('min_cleanliness') == '4.5' }}>⭐⭐⭐⭐⭐ 4.5+</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="col-md-3 col-sm-6">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Search
+                            </button>
+                        </div>
+                        
+                        <!-- Advanced Amenity Filters -->
+                        <div class="col-12">
+                            <div class="border-top pt-3">
+                                <h6 class="text-muted mb-3">
+                                    <i class="bi bi-sliders"></i> Advanced Amenities
+                                </h6>
+                                <div class="row g-2">
+                                    <div class="col-md-2 col-sm-4 col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="toilet_paper" value="true" 
+                                                   {{ 'checked' if request.args.get('toilet_paper') == 'true' }}>
+                                            <label class="form-check-label small">
+                                                🧻 Toilet Paper
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 col-sm-4 col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="baby_changing" value="true"
+                                                   {{ 'checked' if request.args.get('baby_changing') == 'true' }}>
+                                            <label class="form-check-label small">
+                                                🍼 Baby Changing
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 col-sm-4 col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="sanitary_napkins" value="true"
+                                                   {{ 'checked' if request.args.get('sanitary_napkins') == 'true' }}>
+                                            <label class="form-check-label small">
+                                                🩸 Sanitary Napkins
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 col-sm-4 col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="charging_point" value="true"
+                                                   {{ 'checked' if request.args.get('charging_point') == 'true' }}>
+                                            <label class="form-check-label small">
+                                                🔌 Charging Point
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 col-sm-4 col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="wheelchair_accessible" value="true"
+                                                   {{ 'checked' if request.args.get('wheelchair_accessible') == 'true' }}>
+                                            <label class="form-check-label small">
+                                                ♿ Wheelchair Access
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 col-sm-4 col-6">
+                                        <div class="d-grid">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">
+                                                <i class="bi bi-x-circle"></i> Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results -->
+    <div class="row">
+        {% if washrooms %}
+        <!-- Results Header -->
+        <div class="col-12 mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="text-muted">
+                    <i class="bi bi-list"></i> Found {{ washrooms|length }} washroom(s)
+                </h5>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary btn-sm active" onclick="switchView('list')">
+                        <i class="bi bi-list"></i> List
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="switchView('map')">
+                        <i class="bi bi-map"></i> Map
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Washroom Cards -->
+        {% for washroom in washrooms %}
+        <div class="col-lg-6 col-md-12 mb-4">
+            <div class="card shadow-sm border-0 h-100 washroom-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="flex-grow-1">
+                            <h5 class="card-title fw-bold mb-1">{{ washroom.name }}</h5>
+                            <p class="text-muted small mb-0">
+                                <i class="bi bi-geo-alt"></i> {{ washroom.address }}
+                            </p>
+                            <div class="mt-1">
+                                <span class="badge bg-{{ 'primary' if washroom.type == 'mall' else 'success' if washroom.type == 'cafe' else 'warning' }}">
+                                    {{ washroom.type.replace('_', ' ').title() }}
+                                </span>
+                                {% if not washroom.is_paid %}
+                                <span class="badge bg-success">FREE</span>
+                                {% else %}
+                                <span class="badge bg-info">PAID</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            {% if washroom.distance %}
+                            <div class="fw-bold text-primary">{{ "%.1f"|format(washroom.distance) }} km</div>
+                            <div class="small text-muted">{{ "%.0f"|format(washroom.distance * 12) }} min walk</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Rating and Cleanliness -->
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <div class="d-flex align-items-center">
+                                <div class="me-2">
+                                    {% for i in range(1, 6) %}
+                                    <i class="bi bi-star{{ '-fill' if i <= washroom.cleanliness_score else '' }} text-warning"></i>
+                                    {% endfor %}
+                                </div>
+                                <span class="fw-bold">{{ washroom.cleanliness_score }}</span>
+                                <span class="text-muted small">/5</span>
+                            </div>
+                            <small class="text-muted">Cleanliness Score</small>
+                        </div>
+                        <div class="col-6 text-end">
+                            <div class="fw-bold text-info">{{ washroom.reviews|length }} reviews</div>
+                            <small class="text-muted">User Feedback</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Amenities -->
+                    {% if washroom.amenities %}
+                    <div class="mb-3">
+                        <div class="row g-1">
+                            {% if washroom.amenities.has_indian_seat %}
+                            <div class="col-auto">
+                                <span class="badge bg-light text-dark small">🚻 Indian</span>
+                            </div>
+                            {% endif %}
+                            {% if washroom.amenities.has_western_seat %}
+                            <div class="col-auto">
+                                <span class="badge bg-light text-dark small">🚽 Western</span>
+                            </div>
+                            {% endif %}
+                            {% if washroom.amenities.has_toilet_paper %}
+                            <div class="col-auto">
+                                <span class="badge bg-light text-dark small">🧻 Paper</span>
+                            </div>
+                            {% endif %}
+                            {% if washroom.amenities.has_charging_point %}
+                            <div class="col-auto">
+                                <span class="badge bg-light text-dark small">🔌 Charging</span>
+                            </div>
+                            {% endif %}
+                            {% if washroom.amenities.is_wheelchair_accessible %}
+                            <div class="col-auto">
+                                <span class="badge bg-light text-dark small">♿ Accessible</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('reviews', washroom_id=washroom.id) }}" class="btn btn-outline-primary btn-sm flex-fill">
+                            <i class="bi bi-star"></i> Reviews
+                        </a>
+                        <button class="btn btn-success btn-sm flex-fill" onclick="getDirections({{ washroom.latitude }}, {{ washroom.longitude }})">
+                            <i class="bi bi-navigation"></i> Directions
+                        </button>
+                        <button class="btn btn-info btn-sm" onclick="callWashroom()">
+                            <i class="bi bi-telephone"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% else %}
+        <!-- No Results -->
+        <div class="col-12">
+            <div class="card shadow-sm border-0 text-center py-5">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <i class="bi bi-search text-muted" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4 class="text-muted mb-3">No washrooms found</h4>
+                    <p class="text-muted mb-4">
+                        Try adjusting your filters or search in a different area.
+                    </p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button class="btn btn-primary" onclick="clearFilters()">
+                            <i class="bi bi-arrow-clockwise"></i> Clear Filters
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="getCurrentLocation()">
+                            <i class="bi bi-crosshair"></i> Try My Location
+                        </button>
+                        <a href="{{ url_for('emergency') }}" class="btn btn-danger">
+                            <i class="bi bi-exclamation-triangle"></i> Emergency Help
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Emergency Button (Floating) -->
+<div class="position-fixed bottom-0 end-0 m-3">
+    <a href="{{ url_for('emergency') }}" class="btn btn-danger btn-lg rounded-circle shadow-lg" 
+       style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+        <i class="bi bi-exclamation-triangle fs-4"></i>
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Get current location
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                document.getElementById('lat').value = position.coords.latitude;
+                document.getElementById('lng').value = position.coords.longitude;
+                document.getElementById('filter-form').submit();
+            },
+            function(error) {
+                console.error('Geolocation error:', error);
+                alert('Unable to get your location. Please enable GPS and try again.');
+            }
+        );
+    } else {
+        alert('Geolocation is not supported by your browser.');
+    }
+}
+
+// Clear all filters
+function clearFilters() {
+    const form = document.getElementById('filter-form');
+    form.reset();
+    form.submit();
+}
+
+// Get directions to washroom
+function getDirections(lat, lng) {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+            const url = `https://www.google.com/maps/dir/${userLat},${userLng}/${lat},${lng}`;
+            window.open(url, '_blank');
+        });
+    } else {
+        const url = `https://www.google.com/maps/search/${lat},${lng}`;
+        window.open(url, '_blank');
+    }
+}
+
+// Call washroom (placeholder)
+function callWashroom() {
+    alert('Feature coming soon! You will be able to call the facility directly.');
+}
+
+// Switch between list and map view
+function switchView(view) {
+    const buttons = document.querySelectorAll('.btn-group .btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    
+    if (view === 'list') {
+        buttons[0].classList.add('active');
+        // Show list view (default)
+    } else if (view === 'map') {
+        buttons[1].classList.add('active');
+        // Redirect to map with current filters
+        const params = new URLSearchParams(window.location.search);
+        window.location.href = '/map?' + params.toString();
+    }
+}
+
+// Auto-submit form when filters change
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('filter-form');
+    const selects = form.querySelectorAll('select');
+    const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+    
+    selects.forEach(select => {
+        select.addEventListener('change', function() {
+            form.submit();
+        });
+    });
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            // Small delay to allow user to select multiple checkboxes
+            setTimeout(() => form.submit(), 500);
+        });
+    });
+});
+</script>
+{% endblock %}

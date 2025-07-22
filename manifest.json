@@ -1,0 +1,208 @@
+{
+  "name": "PrivyPilot - Emergency Washroom Assistance",
+  "short_name": "PrivyPilot",
+  "description": "AI-powered emergency washroom assistance with real-time tracking and intelligent guidance",
+  "version": "1.0.0",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#2563eb",
+  "background_color": "#f8fafc",
+  "lang": "en",
+  "dir": "ltr",
+  
+  "icons": [
+    {
+      "src": "/static/images/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/images/logo.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/static/images/logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  
+  "screenshots": [
+    {
+      "src": "/static/images/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "PrivyPilot mobile interface showing emergency assistance and washroom finder"
+    },
+    {
+      "src": "/static/images/screenshot-desktop.png", 
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "PrivyPilot desktop dashboard with map view and real-time van tracking"
+    }
+  ],
+  
+  "categories": [
+    "health",
+    "utilities", 
+    "navigation",
+    "lifestyle"
+  ],
+  
+  "shortcuts": [
+    {
+      "name": "Emergency Help",
+      "short_name": "Emergency",
+      "description": "Get immediate emergency washroom assistance",
+      "url": "/emergency",
+      "icons": [
+        {
+          "src": "/static/images/logo.svg",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Find Washrooms",
+      "short_name": "Find",
+      "description": "Find nearby washroom facilities",
+      "url": "/washrooms", 
+      "icons": [
+        {
+          "src": "/static/images/logo.svg",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Map View",
+      "short_name": "Map",
+      "description": "Interactive map with real-time tracking",
+      "url": "/map",
+      "icons": [
+        {
+          "src": "/static/images/logo.svg",
+          "sizes": "96x96", 
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Voice Assistant",
+      "short_name": "Voice",
+      "description": "Voice-activated emergency assistance",
+      "url": "/?voice=true",
+      "icons": [
+        {
+          "src": "/static/images/logo.svg",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ],
+  
+  "prefer_related_applications": false,
+  
+  "protocol_handlers": [
+    {
+      "protocol": "web+privypilot",
+      "url": "/emergency?protocol=%s"
+    }
+  ],
+  
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  
+  "handle_links": "preferred",
+  
+  "scope_extensions": [
+    {"origin": "*.privypilot.com"}
+  ],
+  
+  "file_handlers": [
+    {
+      "action": "/emergency",
+      "accept": {
+        "image/*": [".jpg", ".jpeg", ".png", ".gif", ".webp"]
+      },
+      "launch_type": "single-client"
+    }
+  ],
+  
+  "share_target": {
+    "action": "/emergency",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "image",
+          "accept": ["image/jpeg", "image/png", "image/webp", "image/gif"]
+        }
+      ]
+    }
+  },
+  
+  "permissions": [
+    "geolocation",
+    "camera", 
+    "microphone",
+    "notifications",
+    "background-sync",
+    "push"
+  ],
+  
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://privypilot.com/manifest.json"
+    }
+  ],
+  
+  "iarc_rating_id": "e58c174a-81d2-5c3c-32cc-34b8de4a52e9",
+  
+  "custom": {
+    "developer": "Himanshi Kharb",
+    "contact": "support@privypilot.com",
+    "privacy_policy": "/privacy",
+    "terms_of_service": "/terms",
+    "support_url": "/support",
+    "feedback_url": "/feedback",
+    "version_notes": "Initial release with AI-powered emergency assistance, real-time van tracking, and multilingual voice support",
+    "features": [
+      "GPS-based washroom finder",
+      "AI image analysis with BLIP",
+      "Real-time emergency van tracking", 
+      "Voice assistant in English & Hindi",
+      "Offline capability with service worker",
+      "Progressive Web App installation"
+    ],
+    "technologies": [
+      "Flask backend with SQLite",
+      "Leaflet.js interactive maps",
+      "Web Speech API for voice",
+      "Hugging Face AI integration", 
+      "Bootstrap responsive design",
+      "Service Worker for offline support"
+    ]
+  }
+}

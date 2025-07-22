@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container">
+        <div class="row align-items-center min-vh-100">
+            <div class="col-lg-6">
+                <div class="hero-content">
+                    <div class="d-flex align-items-center mb-4">
+                        <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="PrivyPilot" width="80" height="80" class="me-3">
+                        <div>
+                            <h1 class="display-4 fw-bold text-primary mb-0">PrivyPilot</h1>
+                            <p class="lead text-muted">Emergency Washroom Assistance</p>
+                        </div>
+                    </div>
+                    
+                    {% if not current_user.is_authenticated %}
+                    <h2 class="h3 mb-4">Your AI-Powered Washroom Finder</h2>
+                    <p class="lead text-muted mb-4">
+                        Find clean, safe washrooms instantly with real-time tracking, emergency van dispatch, and intelligent AI guidance.
+                    </p>
+                    
+                    <div class="d-flex flex-column flex-sm-row gap-3 mb-4">
+                        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-person-plus"></i> Get Started Free
+                        </a>
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="bi bi-box-arrow-in-right"></i> Sign In
+                        </a>
+                    </div>
+                    {% else %}
+                    <h2 class="h3 mb-4">Welcome back, {{ current_user.name }}!</h2>
+                    <p class="lead text-muted mb-4">
+                        Quick access to all emergency washroom services and features.
+                    </p>
+                    {% endif %}
+                    
+                    <!-- Key Features -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center">
+                                <div class="feature-icon bg-primary text-white rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                    <i class="bi bi-geo-alt"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Smart Location</h6>
+                                    <small class="text-muted">GPS-based finder</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center">
+                                <div class="feature-icon bg-success text-white rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                    <i class="bi bi-truck"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Emergency Van</h6>
+                                    <small class="text-muted">Real-time tracking</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center">
+                                <div class="feature-icon bg-info text-white rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                    <i class="bi bi-robot"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">AI Assistant</h6>
+                                    <small class="text-muted">Smart guidance</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center">
+                                <div class="feature-icon bg-warning text-white rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                    <i class="bi bi-mic"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Voice Help</h6>
+                                    <small class="text-muted">Hands-free support</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                {% if current_user.is_authenticated %}
+                <!-- Quick Action Panel -->
+                <div class="card shadow-lg border-0 bg-gradient">
+                    <div class="card-body p-4">
+                        <h4 class="card-title mb-4 text-center">
+                            <i class="bi bi-lightning text-warning"></i> Quick Actions
+                        </h4>
+                        
+                        <div class="row g-3">
+                            <!-- Emergency Help -->
+                            <div class="col-12">
+                                <a href="{{ url_for('emergency') }}" class="btn btn-danger btn-lg w-100 text-start d-flex align-items-center">
+                                    <i class="bi bi-exclamation-triangle fs-3 me-3"></i>
+                                    <div>
+                                        <div class="fw-bold">Emergency Help</div>
+                                        <small>AI-powered assistance with image analysis</small>
+                                    </div>
+                                </a>
+                            </div>
+                            
+                            <!-- Find Washrooms -->
+                            <div class="col-12">
+                                <a href="{{ url_for('washrooms') }}" class="btn btn-primary btn-lg w-100 text-start d-flex align-items-center">
+                                    <i class="bi bi-geo-alt fs-3 me-3"></i>
+                                    <div>
+                                        <div class="fw-bold">Find Washrooms</div>
+                                        <small>Locate nearby facilities with filters</small>
+                                    </div>
+                                </a>
+                            </div>
+                            
+                            <!-- Interactive Map -->
+                            <div class="col-6">
+                                <a href="{{ url_for('map') }}" class="btn btn-info btn-lg w-100 text-center">
+                                    <i class="bi bi-map fs-4"></i><br>
+                                    <small>Map View</small>
+                                </a>
+                            </div>
+                            
+                            <!-- Voice Assistant -->
+                            <div class="col-6">
+                                <button class="btn btn-success btn-lg w-100 text-center" onclick="toggleVoiceAssistant()">
+                                    <i class="bi bi-mic fs-4"></i><br>
+                                    <small>Voice Help</small>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Location Status -->
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span class="text-muted">
+                                    <i class="bi bi-geo-alt"></i> Location Status
+                                </span>
+                                <span id="location-status" class="badge bg-secondary">Detecting...</span>
+                            </div>
+                            <div id="current-location" class="small text-muted mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <!-- Feature Showcase -->
+                <div class="card shadow-lg border-0 bg-gradient">
+                    <div class="card-body p-4 text-center">
+                        <div class="mb-4">
+                            <i class="bi bi-shield-check text-primary" style="font-size: 4rem;"></i>
+                        </div>
+                        <h4 class="card-title mb-3">Safe & Reliable</h4>
+                        <ul class="list-unstyled text-start">
+                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i> Real-time washroom availability</li>
+                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i> User reviews and cleanliness ratings</li>
+                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i> Emergency van dispatch</li>
+                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i> AI-powered situation analysis</li>
+                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i> Voice assistance in multiple languages</li>
+                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i> Accessibility-friendly options</li>
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if current_user.is_authenticated %}
+<!-- Stats Section -->
+<section class="bg-light py-5">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-md-3 col-6 mb-3">
+                <div class="stat-item">
+                    <h3 class="text-primary fw-bold">500+</h3>
+                    <p class="text-muted">Washrooms Mapped</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+                <div class="stat-item">
+                    <h3 class="text-success fw-bold">24/7</h3>
+                    <p class="text-muted">Emergency Support</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+                <div class="stat-item">
+                    <h3 class="text-info fw-bold">AI</h3>
+                    <p class="text-muted">Smart Guidance</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+                <div class="stat-item">
+                    <h3 class="text-warning fw-bold">2</h3>
+                    <p class="text-muted">Languages</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Get user location on page load
+document.addEventListener('DOMContentLoaded', function() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                
+                document.getElementById('location-status').textContent = 'Located';
+                document.getElementById('location-status').className = 'badge bg-success';
+                document.getElementById('current-location').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                
+                // Store location in session storage
+                sessionStorage.setItem('userLat', lat);
+                sessionStorage.setItem('userLng', lng);
+            },
+            function(error) {
+                document.getElementById('location-status').textContent = 'Failed';
+                document.getElementById('location-status').className = 'badge bg-danger';
+                document.getElementById('current-location').textContent = 'Please enable location access';
+            }
+        );
+    }
+});
+
+// Voice Assistant Toggle
+function toggleVoiceAssistant() {
+    if ('speechSynthesis' in window && 'webkitSpeechRecognition' in window) {
+        // Initialize voice assistant
+        window.location.href = '/emergency';
+    } else {
+        alert('Voice assistant is not supported in your browser. Please try using Chrome or Edge.');
+    }
+}
+</script>
+{% endblock %}

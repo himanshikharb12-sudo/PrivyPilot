@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+
+{% block title %}Van Tracking - PrivyPilot{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Tracking Header -->
+    <div class="bg-success text-white p-4 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="bi bi-truck fs-1"></i>
+                        </div>
+                        <div>
+                            <h3 class="fw-bold mb-1">Emergency Van Dispatched</h3>
+                            <p class="mb-0 lead">Real-time tracking for Request #{{ emergency_request.id }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="text-end">
+                        <div class="fw-bold fs-4" id="eta-display">{{ van_tracking.eta_minutes }} min</div>
+                        <small>Estimated Arrival</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Map Section -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-map"></i> Live Tracking Map
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="tracking-map" style="height: 500px; width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status Panel -->
+        <div class="col-lg-4">
+            <!-- Van Status -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">
+                        <i class="bi bi-truck"></i> Van Status
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="status-indicator bg-success me-3"></div>
+                        <div>
+                            <div class="fw-bold" id="van-status">{{ van_tracking.status.title() }}</div>
+                            <small class="text-muted">Current Status</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Progress</span>
+                            <span id="progress-percentage">0%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" id="progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="fw-bold text-primary" id="distance-remaining">Calculating...</div>
+                            <small class="text-muted">Distance</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="fw-bold text-success" id="eta-minutes">{{ van_tracking.eta_minutes }}</div>
+                            <small class="text-muted">Minutes</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Emergency Request Details -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Emergency Details
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Request Time:</strong><br>
+                        <span class="text-muted">{{ emergency_request.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                    </div>
+                    
+                    {% if emergency_request.image_description %}
+                    <div class="mb-3">
+                        <strong>Scene Analysis:</strong><br>
+                        <span class="text-muted">{{ emergency_request.image_description }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <strong>Location:</strong><br>
+                        <span class="text-muted">{{ emergency_request.latitude }}, {{ emergency_request.longitude }}</span>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button class="btn btn-outline-danger btn-sm" onclick="cancelRequest()">
+                            <i class="bi bi-x-circle"></i> Cancel Request
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Suggestions -->
+            {% if emergency_request.ai_suggestion %}
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-robot"></i> AI Assistance
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="ai-suggestion">
+                        {{ emergency_request.ai_suggestion|replace('\n', '<br>')|safe }}
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-outline-primary btn-sm w-100" onclick="readAloud()">
+                            <i class="bi bi-volume-up"></i> Read Aloud
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Status Timeline -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-clock-history"></i> Status Timeline
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item completed">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Emergency Request Received</h6>
+                                <small class="text-muted">{{ emergency_request.created_at.strftime('%I:%M %p') }}</small>
+                                <p class="text-muted small mb-0">Your emergency request has been processed and analyzed by our AI system.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item completed">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Van Dispatched</h6>
+                                <small class="text-muted">{{ van_tracking.last_updated.strftime('%I:%M %p') }}</small>
+                                <p class="text-muted small mb-0">Emergency mobile washroom van has been dispatched to your location.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item active">
+                            <div class="timeline-marker bg-warning"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">En Route</h6>
+                                <small class="text-muted">Current</small>
+                                <p class="text-muted small mb-0">Van is currently en route to your location with real-time tracking.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item pending">
+                            <div class="timeline-marker bg-light"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Arrival</h6>
+                                <small class="text-muted">ETA {{ van_tracking.eta_minutes }} min</small>
+                                <p class="text-muted small mb-0">Van will arrive at your location and you'll be notified.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contact Support Modal -->
+<div class="modal fade" id="supportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-headset"></i> Contact Support
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Need immediate assistance? Our support team is available 24/7.</p>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary">
+                        <i class="bi bi-telephone"></i> Call Emergency: 1800-PRIVY-HELP
+                    </button>
+                    <button class="btn btn-outline-primary">
+                        <i class="bi bi-chat-dots"></i> Live Chat Support
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Support Button -->
+<div class="position-fixed bottom-0 start-0 m-3">
+    <button class="btn btn-primary rounded-circle shadow-lg" 
+            style="width: 60px; height: 60px;" 
+            data-bs-toggle="modal" 
+            data-bs-target="#supportModal">
+        <i class="bi bi-headset fs-4"></i>
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/van-tracking.js') }}"></script>
+<script>
+let trackingMap;
+let vanMarker;
+let userMarker;
+let routeLine;
+
+// Initialize tracking
+document.addEventListener('DOMContentLoaded', function() {
+    initTrackingMap();
+    startLocationUpdates();
+});
+
+function initTrackingMap() {
+    // Initialize map centered on user location
+    trackingMap = L.map('tracking-map').setView([{{ emergency_request.latitude }}, {{ emergency_request.longitude }}], 14);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(trackingMap);
+    
+    // Add user location marker
+    userMarker = L.marker([{{ emergency_request.latitude }}, {{ emergency_request.longitude }}], {
+        icon: L.divIcon({
+            className: 'user-marker',
+            html: '<i class="bi bi-person-fill text-danger fs-3"></i>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+        })
+    }).addTo(trackingMap).bindPopup('Your Location');
+    
+    // Add van marker
+    vanMarker = L.marker([{{ van_tracking.current_latitude }}, {{ van_tracking.current_longitude }}], {
+        icon: L.divIcon({
+            className: 'van-marker',
+            html: '<i class="bi bi-truck text-success fs-3"></i>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+        })
+    }).addTo(trackingMap).bindPopup('Emergency Van');
+    
+    // Draw route line
+    updateRouteLine();
+}
+
+function updateRouteLine() {
+    if (routeLine) {
+        trackingMap.removeLayer(routeLine);
+    }
+    
+    const vanPos = vanMarker.getLatLng();
+    const userPos = userMarker.getLatLng();
+    
+    routeLine = L.polyline([
+        [vanPos.lat, vanPos.lng],
+        [userPos.lat, userPos.lng]
+    ], {
+        color: '#28a745',
+        weight: 4,
+        opacity: 0.7,
+        dashArray: '10, 10'
+    }).addTo(trackingMap);
+    
+    // Fit map to show both markers
+    const group = new L.featureGroup([vanMarker, userMarker]);
+    trackingMap.fitBounds(group.getBounds().pad(0.1));
+}
+
+function startLocationUpdates() {
+    const requestId = {{ emergency_request.id }};
+    
+    function updateVanLocation() {
+        fetch(`/api/van_location/${requestId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error('Van tracking error:', data.error);
+                    return;
+                }
+                
+                // Update van marker position
+                vanMarker.setLatLng([data.latitude, data.longitude]);
+                
+                // Update status displays
+                document.getElementById('eta-minutes').textContent = data.eta_minutes;
+                document.getElementById('eta-display').textContent = data.eta_minutes + ' min';
+                document.getElementById('van-status').textContent = data.status.replace('_', ' ').toUpperCase();
+                
+                // Calculate progress and distance
+                const userPos = userMarker.getLatLng();
+                const vanPos = [data.latitude, data.longitude];
+                const distance = calculateDistance(vanPos[0], vanPos[1], userPos.lat, userPos.lng);
+                
+                document.getElementById('distance-remaining').textContent = distance.toFixed(1) + ' km';
+                
+                // Update progress bar (rough estimation)
+                const initialDistance = 5; // Assume initial distance was ~5km
+                const progress = Math.max(0, Math.min(100, ((initialDistance - distance) / initialDistance) * 100));
+                document.getElementById('progress-bar').style.width = progress + '%';
+                document.getElementById('progress-percentage').textContent = Math.round(progress) + '%';
+                
+                // Update route line
+                updateRouteLine();
+                
+                // Check if arrived
+                if (data.status === 'arrived') {
+                    showArrivalNotification();
+                    clearInterval(updateInterval);
+                }
+            })
+            .catch(error => {
+                console.error('Failed to update van location:', error);
+            });
+    }
+    
+    // Update every 5 seconds
+    const updateInterval = setInterval(updateVanLocation, 5000);
+    
+    // Initial update
+    updateVanLocation();
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+function showArrivalNotification() {
+    // Show success notification
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-success alert-dismissible position-fixed';
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-check-circle-fill fs-3 me-3"></i>
+            <div>
+                <h6 class="mb-1">Van Has Arrived!</h6>
+                <p class="mb-0">Your emergency washroom van is at your location.</p>
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(notification);
+    
+    // Update timeline
+    const pendingItem = document.querySelector('.timeline-item.pending');
+    if (pendingItem) {
+        pendingItem.className = 'timeline-item completed';
+        pendingItem.querySelector('.timeline-marker').className = 'timeline-marker bg-success';
+        pendingItem.querySelector('small').textContent = 'Arrived';
+    }
+}
+
+function cancelRequest() {
+    if (confirm('Are you sure you want to cancel this emergency request?')) {
+        // In a real app, this would make an API call
+        alert('Emergency request cancelled. The van will be redirected to other requests.');
+        window.location.href = '/';
+    }
+}
+
+function readAloud() {
+    const text = document.querySelector('.ai-suggestion').textContent;
+    if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.8;
+        utterance.pitch = 1;
+        speechSynthesis.speak(utterance);
+    } else {
+        alert('Text-to-speech is not supported in your browser.');
+    }
+}
+</script>
+{% endblock %}

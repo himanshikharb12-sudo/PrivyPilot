@@ -20,8 +20,8 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 logging.basicConfig(level=logging.DEBUG)
 
 # configure the database
-database_path = "/mnt/data/privypilot.db"
-os.makedirs(os.path.dirname(database_path), exist_ok=True)
+database_path = "/tmp/privypilot.db"
+os.makedirs(os.app.config['database_path'], exist_ok=True)
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{database_path}"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,

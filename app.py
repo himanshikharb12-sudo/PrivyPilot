@@ -6,8 +6,7 @@ from flask_login import LoginManager
 from sqlalchemy.ext.declarative import declarative_base
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-class Base(DeclarativeBase):
-    pass
+Base = declarative_base()
 
 db = SQLAlchemy(model_class=Base)
 login_manager = LoginManager()

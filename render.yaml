@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: privypilot
+    env: python
+    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
+    region: oregon
+    plan: free
+    branch: main
+    healthCheckPath: /
